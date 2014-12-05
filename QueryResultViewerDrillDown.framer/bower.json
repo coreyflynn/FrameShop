@@ -1,0 +1,19 @@
+{
+  "name": "QueryResultViewerDrillDown",
+  "version": "0.0.0",
+  "homepage": "https://github.com/coreyflynn/FrameShop",
+  "authors": [
+    "Corey Flynn <flynn.corey@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+    "dependencies": {
+        "barista": "git@github.com:cmap/barista.git#develop"
+    }
+}
