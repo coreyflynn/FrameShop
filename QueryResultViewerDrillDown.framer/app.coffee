@@ -5,7 +5,7 @@ tableContainer.centerX()
 
 # define a prototypical cell
 class Cell
-  constructor: (@superLayer,@offset,@name,@color) ->
+  constructor: (@superLayer,@offset,@name,@color,@parentCell) ->
 
     # basic layer setup
     cell = new Layer
@@ -26,6 +26,15 @@ class Cell
 
     # subCells
     cell.subCells = []
+    cell.parentCell = null
+
+    cell.updateStates = (update) ->
+      cell.states.add({
+        hidden: {y: cell.states._states.hidden.y + update}
+        default: {y: cell.states._states.default.y+ update}
+        active: {y: cell.states._states.active.y+ update}
+        pushedDown: {y: cell.states._states.pushedDown.y+ update}
+      })
 
     return cell
 
@@ -48,7 +57,6 @@ class CellFactory
     cell.states.add({
       active: {y: @offset}
       pushedDown: {y: @pushOffset}
-      pushedDown2x: {y: @pushOffset * 2}
     })
 
   buildCells: (N,color) ->
@@ -73,12 +81,16 @@ class CellFactory
         layer.states.switch('active') if not active
         layer.states.switch('default') if active
         c.states.switch('pushedDown') for c in cells[pushStart..] if not active
+        if not active
+          for c in cells[pushStart..]
+            for subCell in c.subCells
+              subCell.updateStates(153)
 
         # handle sub cells
         for c in cells
           for subCell in c.subCells
-            subCell.states.switch('default')
-        subCell.states.switch('pushedDown')for subCell in layer.subCells if not active
+            subCell.states.switch('hidden')
+        subCell.states.switch('default')for subCell in layer.subCells if not active
 
 
       # add the cell to the cells array
@@ -96,6 +108,15 @@ class SubCellFactory extends CellFactory
   updateOffsets: ->
     @pushOffset += 51
     @offset += 0
+
+  addStates: (cell) ->
+    cell.states.add({
+      hidden: {y: @offset}
+      default: {y: @pushOffset}
+      active: {y: @pushOffset}
+      pushedDown: {y: @pushOffset + 153}
+    })
+
   buildCells: (N,color)->
     super(N,color)
     @parentCell.subCells = @cells

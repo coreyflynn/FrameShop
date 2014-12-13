@@ -66,12 +66,13 @@ tableContainer.scroll = true;
 tableContainer.centerX();
 
 Cell = (function() {
-  function Cell(superLayer, offset, name, color) {
+  function Cell(superLayer, offset, name, color, parentCell) {
     var cell;
     this.superLayer = superLayer;
     this.offset = offset;
     this.name = name;
     this.color = color;
+    this.parentCell = parentCell;
     cell = new Layer({
       superLayer: this.superLayer,
       y: this.offset,
@@ -87,6 +88,23 @@ Cell = (function() {
     cell.shadowBlur = 1.5;
     cell.style.border = '1px solid #F9F9F9';
     cell.subCells = [];
+    cell.parentCell = null;
+    cell.updateStates = function(update) {
+      return cell.states.add({
+        hidden: {
+          y: cell.states._states.hidden.y + update
+        },
+        "default": {
+          y: cell.states._states["default"].y + update
+        },
+        active: {
+          y: cell.states._states.active.y + update
+        },
+        pushedDown: {
+          y: cell.states._states.pushedDown.y + update
+        }
+      });
+    };
     return cell;
   }
 
@@ -114,9 +132,6 @@ CellFactory = (function() {
       },
       pushedDown: {
         y: this.pushOffset
-      },
-      pushedDown2x: {
-        y: this.pushOffset * 2
       }
     });
   };
@@ -133,7 +148,7 @@ CellFactory = (function() {
       };
       cells = this.cells;
       cell.on(Events.Click, function(event, layer) {
-        var active, c, pushStart, subCell, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _results1;
+        var active, c, pushStart, subCell, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _m, _n, _o, _ref, _ref1, _ref2, _ref3, _ref4, _results1;
         pushStart = layer.name + 1;
         active = layer.states.current === 'active';
         for (_i = 0, _len = cells.length; _i < _len; _i++) {
@@ -153,20 +168,31 @@ CellFactory = (function() {
             c.states["switch"]('pushedDown');
           }
         }
-        for (_k = 0, _len2 = cells.length; _k < _len2; _k++) {
-          c = cells[_k];
-          _ref1 = c.subCells;
-          for (_l = 0, _len3 = _ref1.length; _l < _len3; _l++) {
-            subCell = _ref1[_l];
-            subCell.states["switch"]('default');
+        if (!active) {
+          _ref1 = cells.slice(pushStart);
+          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+            c = _ref1[_k];
+            _ref2 = c.subCells;
+            for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
+              subCell = _ref2[_l];
+              subCell.updateStates(153);
+            }
+          }
+        }
+        for (_m = 0, _len4 = cells.length; _m < _len4; _m++) {
+          c = cells[_m];
+          _ref3 = c.subCells;
+          for (_n = 0, _len5 = _ref3.length; _n < _len5; _n++) {
+            subCell = _ref3[_n];
+            subCell.states["switch"]('hidden');
           }
         }
         if (!active) {
-          _ref2 = layer.subCells;
+          _ref4 = layer.subCells;
           _results1 = [];
-          for (_m = 0, _len4 = _ref2.length; _m < _len4; _m++) {
-            subCell = _ref2[_m];
-            _results1.push(subCell.states["switch"]('pushedDown'));
+          for (_o = 0, _len6 = _ref4.length; _o < _len6; _o++) {
+            subCell = _ref4[_o];
+            _results1.push(subCell.states["switch"]('default'));
           }
           return _results1;
         }
@@ -195,6 +221,23 @@ SubCellFactory = (function(_super) {
   SubCellFactory.prototype.updateOffsets = function() {
     this.pushOffset += 51;
     return this.offset += 0;
+  };
+
+  SubCellFactory.prototype.addStates = function(cell) {
+    return cell.states.add({
+      hidden: {
+        y: this.offset
+      },
+      "default": {
+        y: this.pushOffset
+      },
+      active: {
+        y: this.pushOffset
+      },
+      pushedDown: {
+        y: this.pushOffset + 153
+      }
+    });
   };
 
   SubCellFactory.prototype.buildCells = function(N, color) {
