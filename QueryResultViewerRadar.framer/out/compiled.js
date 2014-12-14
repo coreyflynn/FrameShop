@@ -54,7 +54,7 @@ this.Pulser = (function(_super) {
 var Bubble, Expander, container, gridSpacer, gridX, gridY, i, j, objectCenter, _i, _j;
 
 Bubble = (function() {
-  function Bubble(parent, objectCenter, size, color, isMain, offset, direction) {
+  function Bubble(parent, objectCenter, size, color, isMain, offset, angle) {
     var bubble;
     this.parent = parent;
     this.objectCenter = objectCenter;
@@ -62,7 +62,7 @@ Bubble = (function() {
     this.color = color;
     this.isMain = isMain != null ? isMain : false;
     this.offset = offset != null ? offset : 100;
-    this.direction = direction != null ? direction : 'none';
+    this.angle = angle != null ? angle : null;
     bubble = new Layer({
       superLayer: this.parent,
       height: this.size,
@@ -86,45 +86,20 @@ Bubble = (function() {
         time: 0.2
       };
     }
-    switch (this.direction) {
-      case 'N':
-        bubble.states.add({
-          open: {
-            y: objectCenter.y - this.offset - this.size / 2,
-            opacity: 1
-          }
-        });
-        break;
-      case 'S':
-        bubble.states.add({
-          open: {
-            y: objectCenter.y + this.offset - this.size / 2,
-            opacity: 1
-          }
-        });
-        break;
-      case 'E':
-        bubble.states.add({
-          open: {
-            x: objectCenter.x + this.offset - this.size / 2,
-            opacity: 1
-          }
-        });
-        break;
-      case 'W':
-        bubble.states.add({
-          open: {
-            x: objectCenter.x - this.offset - this.size / 2,
-            opacity: 1
-          }
-        });
-        break;
-      default:
-        bubble.states.add({
-          open: {
-            opacity: .25
-          }
-        });
+    if (this.isMain) {
+      bubble.states.add({
+        open: {
+          opacity: 0.25
+        }
+      });
+    } else {
+      bubble.states.add({
+        open: {
+          x: objectCenter.x - (this.offset * Math.sin(this.angle)) - this.size / 2,
+          y: objectCenter.y - (this.offset * Math.cos(this.angle)) - this.size / 2,
+          opacity: 1
+        }
+      });
     }
     return bubble;
   }
@@ -134,24 +109,34 @@ Bubble = (function() {
 })();
 
 Expander = (function() {
-  function Expander(parent, objectCenter, size) {
-    var that;
+  function Expander(parent, objectCenter, size, numSubBubbles) {
+    var i, that, _i, _ref;
     this.parent = parent;
     this.objectCenter = objectCenter;
     this.size = size;
+    this.numSubBubbles = numSubBubbles;
     this.mainBubble = new Bubble(this.parent, this.objectCenter, this.size, "blue", true);
-    this.northBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 'N');
-    this.southBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 'S');
-    this.westBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 'W');
-    this.eastBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 'E');
+    this.northBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 0);
+    this.southBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 2 * Math.PI / 4);
+    this.westBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 2 * Math.PI / 4 * 2);
+    this.eastBubble = new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, 2 * Math.PI / 4 * 3);
+    this.angleIncrement = 2 * Math.PI / this.numSubBubbles;
+    this.subBubbles = [];
+    for (i = _i = 0, _ref = this.numSubBubbles; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+      this.subBubbles.push(new Bubble(this.parent, this.objectCenter, Math.random() * this.size / 2 + this.size / 5, "red", false, this.size, this.angleIncrement * i));
+    }
     this.mainBubble.bringToFront();
     that = this;
     this.mainBubble.on(Events.Click, function() {
+      var subBubble, _j, _len, _ref1, _results;
       that.mainBubble.states.next();
-      that.northBubble.states.next();
-      that.southBubble.states.next();
-      that.westBubble.states.next();
-      return that.eastBubble.states.next();
+      _ref1 = that.subBubbles;
+      _results = [];
+      for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
+        subBubble = _ref1[_j];
+        _results.push(subBubble.states.next());
+      }
+      return _results;
     });
   }
 
@@ -184,6 +169,6 @@ for (i = _i = 0; 0 <= gridX ? _i <= gridX : _i >= gridX; i = 0 <= gridX ? ++_i :
       x: Screen.width / 2 - gridSpacer + gridSpacer * i,
       y: Screen.height / 2 - gridSpacer + gridSpacer * j
     };
-    new Expander(container, objectCenter, Math.random() * 50 + 20);
+    new Expander(container, objectCenter, Math.random() * 50 + 20, Math.round(Math.random() * 7) + 2);
   }
 }
